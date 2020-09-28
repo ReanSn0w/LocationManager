@@ -5,6 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "LocationManager",
+	platforms: [.iOS(.v13)],
     products: [
         .library(name: "LocationManager",targets: ["LocationManager"]),
     ],
