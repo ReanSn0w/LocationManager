@@ -1,73 +1,109 @@
 import MapKit
+import Combine
 
-@available (iOS 13.0, *)
-public class LocationManager {
-    private init() {}
+public class LocationManager: ObservableObject {
     public static var shared = LocationManager()
     
-    private let manager = CLLocationManager()
+    private var locationCancellable: AnyCancellable? = nil
     
-    public var locationManager: CLLocationManager {
-        get {
-            self.manager 
-        }
+    /** Стандартное значение для разворачивания объекта с локацией */
+    private(set) var defaultLocation: CLLocation
+    public let locationManager = CLLocationManager()
+    
+    @Published var currentLocation: CLLocation? = nil
+    
+    private init() {
+        defaultLocation = .init(
+            latitude: 55.755819,
+            longitude: 37.617644)
+        
+        locationCancellable = locationManager.publisher(for: \.location)
+            .sink(receiveValue: { newLocation in
+                self.currentLocation = newLocation
+            })
     }
-}
-
-@available (iOS 13.0, *)
-extension LocationManager {
-    public var recentLocation: CLLocation? {
-        get {
-            self.manager.location
-        }
-    }
-}
-
-@available (iOS 13.0, *)
-extension LocationManager {
+    
     public func requestAccess(
         mode: AccessMode,
         accuracy: Accuracy)
     {
+        locationManager.desiredAccuracy = accuracy.rawValue
+        locationManager.distanceFilter = kCLDistanceFilterNone
+        
         switch mode {
         case .always:
-            self.manager.requestAlwaysAuthorization()
+            self.locationManager.requestAlwaysAuthorization()
         case .inUse:
-            self.manager.requestWhenInUseAuthorization()
+            self.locationManager.requestWhenInUseAuthorization()
         }
-        
-        manager.desiredAccuracy = accuracy.rawValue
-        manager.distanceFilter = kCLDistanceFilterNone
     }
     
-    public enum AccessMode {
-        case inUse
-        case always
+    public func setDefaultLocation(new location: CLLocation) {
+        self.defaultLocation = location
+    }
+}
+
+/** Базовые методы для взаимодействия с локацией*/
+extension LocationManager {
+    public func requestLocation() {
+        locationManager.requestLocation()
     }
     
-    public enum Accuracy: CLLocationAccuracy {
-        case bestForNavidation
-        case best
-        case nearestTenMeters
-        case hundredMeters
-        case kilometer
-        case threeKilometers
-        
-        func value() -> CLLocationAccuracy {
-            switch self {
-            case .bestForNavidation:
-                return kCLLocationAccuracyBestForNavigation
-            case .best:
-                return kCLLocationAccuracyBest
-            case .nearestTenMeters:
-                return kCLLocationAccuracyNearestTenMeters
-            case .hundredMeters:
-                return kCLLocationAccuracyHundredMeters
-            case .kilometer:
-                return kCLLocationAccuracyKilometer
-            case .threeKilometers:
-                return kCLLocationAccuracyThreeKilometers
-            }
+    public func startTrackingLocation() {
+        locationManager.startUpdatingLocation()
+    }
+    
+    public func stopTrackingLocation() {
+        locationManager.stopUpdatingLocation()
+    }
+}
+
+/** Проверти для удобства взаимодействия */
+extension LocationManager {
+    var currentUnwrappedLocation: CLLocation {
+        guard let location = currentLocation else {
+            return defaultLocation
         }
+        
+        return location
+    }
+    
+    var currentCoordinate: CLLocationCoordinate2D? {
+        self.currentLocation?.coordinate
+    }
+    
+    var currentUnwrappedCoordinate: CLLocationCoordinate2D {
+        currentUnwrappedLocation.coordinate
+    }
+}
+
+/** Методы для работы с дистанцией*/
+extension LocationManager {
+    /** Дистанция в метрах до заданной точки, возвращает nil если локация пользователя не определена*/
+    public func distance(from clLocation: CLLocation) -> Int? {
+        guard let location = currentLocation else {
+            return nil
+        }
+        
+        return Int(location.distance(from: clLocation))
+    }
+    
+    /** Дистанция в метрах до заданной точки, возвращает nil если локация пользователя не определена*/
+    public func distance(from coordinate: CLLocationCoordinate2D) -> Int? {
+        distance(from: CLLocation(
+                    latitude: coordinate.latitude,
+                    longitude: coordinate.longitude))
+    }
+    
+    /** Дистанция в метрах до заданной точки, возвращает расстояние от дефолтного местоположения, если локация пользователя не определена*/
+    public func unwrappedDistance(from clLocation: CLLocation) -> Int {
+        Int(currentUnwrappedLocation.distance(from: clLocation))
+    }
+    
+    /** Дистанция в метрах до заданной точки, возвращает расстояние от дефолтного местоположения, если локация пользователя не определена*/
+    public func unwrappedDistance(from coordinate: CLLocationCoordinate2D) -> Int {
+        unwrappedDistance(from: CLLocation(
+                            latitude: coordinate.latitude,
+                            longitude: coordinate.longitude))
     }
 }

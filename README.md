@@ -1,3 +1,3 @@
 # UserLocation
 
-A description of this package.
+Пакет для работы с локацией пользователя из SwiftUI приложений
