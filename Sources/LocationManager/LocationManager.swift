@@ -10,7 +10,7 @@ public class LocationManager: ObservableObject {
     private(set) var defaultLocation: CLLocation
     public let locationManager = CLLocationManager()
     
-    @Published var currentLocation: CLLocation? = nil
+    @Published public var currentLocation: CLLocation? = nil
     
     private init() {
         defaultLocation = .init(
@@ -60,7 +60,7 @@ extension LocationManager {
 
 /** Проверти для удобства взаимодействия */
 extension LocationManager {
-    var currentUnwrappedLocation: CLLocation {
+    public var currentUnwrappedLocation: CLLocation {
         guard let location = currentLocation else {
             return defaultLocation
         }
@@ -68,11 +68,11 @@ extension LocationManager {
         return location
     }
     
-    var currentCoordinate: CLLocationCoordinate2D? {
+    public var currentCoordinate: CLLocationCoordinate2D? {
         self.currentLocation?.coordinate
     }
     
-    var currentUnwrappedCoordinate: CLLocationCoordinate2D {
+    public var currentUnwrappedCoordinate: CLLocationCoordinate2D {
         currentUnwrappedLocation.coordinate
     }
 }
